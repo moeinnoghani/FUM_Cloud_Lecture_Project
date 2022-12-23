@@ -1,0 +1,81 @@
+version: '3'
+
+networks:
+  my-service:
+
+services:
+  nginx:
+    image: nginx
+    container_name: nginx
+    ports:
+      - "9001:80"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.001'
+          memory: 50M
+        reservations:
+          cpus: '0.0001'
+          memory: 20M
+
+    volumes:
+      - ./src:/var/www/html
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - php
+      - mysql
+    networks:
+      - my-service
+
+  mysql:
+    image: mysql:5.7.29
+    container_name: mysql
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: my_database
+      MYSQL_USER: test
+      MYSQL_PASSWORD: 123456
+      MYSQL_ROOT_PASSWORD: 123456
+      SERVICE_TAGE: dev
+      SERVICE_NAME: mysql
+
+    deploy:
+      resources:
+        limits:
+          cpus: '0.001'
+          memory: 50M
+        reservations:
+          cpus: '0.0001'
+          memory: 20M
+
+
+    volumes:
+      - './mysql:/var/lib/mysql'
+      - './docker/sql:/docker-entrypoint-initdb.d'
+    networks:
+      - my-service
+
+  php:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: web-php
+    deploy:
+      resources:
+        limits:
+          cpus: '0.001'
+          memory: 50M
+        reservations:
+          cpus: '0.0001'
+          memory: 20M
+
+    volumes:
+      - ./src:/var/www/html
+    ports:
+      - "9000:9000"
+
+    networks:
+      - my-service
